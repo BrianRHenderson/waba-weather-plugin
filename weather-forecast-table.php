@@ -91,20 +91,10 @@ add_shortcode('alberta_weather_map', function () {
     </div>
 
     <div id="weather-output">
+        <div id="weather-table-body">
+            <p>Loading...</p>
+        </div>
         <canvas id="weather-chart" width="800" height="300"></canvas>
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Precipitation (mm)</th>
-                    <th>Max Temp (°C)</th>
-                    <th>Precip Probability (%)</th>
-                </tr>
-            </thead>
-            <tbody id="weather-table-body">
-                <tr><td colspan="4">Loading...</td></tr>
-            </tbody>
-        </table>
     </div>
 
     <script>
@@ -117,14 +107,14 @@ add_shortcode('alberta_weather_map', function () {
         const weatherOutput = document.getElementById('weather-output');
         let chart;
 
-        const lat = 50.9215;
-        const lon = -113.9573;
+        const lat = 49.9445277;
+        const lon = -114.0689444;
 
-        const viewWidth = 1060;
-        const viewHeight = 1324;
+        const viewWidth = 660;
+        const viewHeight = 700;
 
-        const minLat = 49, maxLat = 60;
-        const minLon = -120, maxLon = -110;
+        const minLat = 48.7, maxLat = 60.1;
+        const minLon = -120, maxLon = -109.8;
 
         function project(lat, lon) {
             const x = ((lon - minLon) / (maxLon - minLon)) * viewWidth;
@@ -149,23 +139,20 @@ add_shortcode('alberta_weather_map', function () {
                     const daily = data.daily;
                     const hourly = data.hourly;
 
-                    tableBody.innerHTML = '';
-                    for (let i = 0; i < daily.time.length; i++) {
-                        tableBody.innerHTML += `
-                            <tr>
-                                <td>${new Date(daily.time[i]).toLocaleDateString()}</td>
-                                <td>${daily.precipitation_sum[i].toFixed(1)}</td>
-                                <td>${daily.temperature_2m_max[i].toFixed(1)}</td>
-                                <td>${daily.precipitation_probability_max[i]}</td>
-                            </tr>
-                        `;
-                    }
+                    tableBody.innerHTML = `
+                        <h2>Skyline Weather</h2>
+                        <p>
+                            <strong>Date: </strong> ${new Date(daily.time[3]).toLocaleDateString()}<br/>
+                            <strong>Precipitation (mm): </strong> ${daily.precipitation_sum[3].toFixed(1)}<br/>
+                            <strong>Max Temp (°C): </strong> ${daily.temperature_2m_max[3].toFixed(1)}<br/>
+                        </p>
+                    `;
 
                     const today = new Date();
                     const showDates = [
-                        new Date(today.getTime() - 86400000).toISOString().slice(0, 10),
+                        new Date(today.getTime()).toISOString().slice(0, 10),
                         today.toISOString().slice(0, 10),
-                        new Date(today.getTime() + 86400000).toISOString().slice(0, 10)
+                        new Date(today.getTime()).toISOString().slice(0, 10)
                     ];
 
                     const chartLabels = [];
@@ -176,7 +163,7 @@ add_shortcode('alberta_weather_map', function () {
                         const date = hourly.time[i].slice(0, 10);
                         if (showDates.includes(date)) {
                             const dt = new Date(hourly.time[i]);
-                            chartLabels.push(`${dt.getDate().toString().padStart(2, '0')} - ${dt.getHours().toString().padStart(2, '0')}:00`);
+                            chartLabels.push(`${dt.getHours().toString().padStart(2, '0')}:00`);
                             chartDataTemp.push(hourly.temperature_2m[i]);
                             chartDataPercip.push(hourly.precipitation[i]);
                         }
@@ -184,22 +171,23 @@ add_shortcode('alberta_weather_map', function () {
 
                     if (chart) chart.destroy();
                     chart = new Chart(chartCanvas.getContext('2d'), {
-                        type: 'line',
                         data: {
                             labels: chartLabels,
                             datasets: [{
+                                type: 'line',
                                 label: 'Hourly Temp (°C)',
                                 data: chartDataTemp,
                                 borderColor: 'rgba(255,99,132,1)',
-                                backgroundColor: 'rgba(255,99,132,0.2)',
+                                backgroundColor: 'rgba(255,99,132,0)',
                                 fill: true,
                                 yAxisID: "y0"
                             },
                             {
+                                type: 'bar',
                                 label: 'Hourly Precipitation (mm)',
                                 data: chartDataPercip,
                                 borderColor: 'rgb(99, 135, 255)',
-                                backgroundColor: 'rgba(99, 122, 255, 0.2)',
+                                backgroundColor: 'rgb(99, 122, 255)',
                                 fill: true,
                                 yAxisID: "y1"
 
@@ -215,15 +203,21 @@ add_shortcode('alberta_weather_map', function () {
                             },
                             scales: {
                                 y0: {
+                                    max: 40,
+                                    min: 0,
+                                    position: 'left',
                                     title: {
                                         display: true,
-                                        text: '°C'
+                                        text: 'Temperature (°C)'
                                     }
                                 },
                                 y1: {
+                                    max: 16,
+                                    min: 0,
+                                    position: 'right',
                                     title: {
                                         display: true,
-                                        text: 'mm'
+                                        text: 'Precipitation (mm)'
                                     }
                                 }
                             }
