@@ -84,9 +84,21 @@ add_shortcode('alberta_weather_map', function () {
 
     <div class="alberta-map-wrapper" id="alberta-map-wrapper">
         <?php echo $svg_content; ?>
-        <div class="marker-container" id="marker-container">
-            <div id="alberta-marker" class="alberta-marker" title="Click for weather"></div>
+        <div id="skyline-marker-container" class="marker-container">
+            <div id="skyline-marker" class="alberta-marker" title="Click for weather"></div>
             <div class="alberta-label">Skyline</div>
+        </div>
+        <div id="a3-marker-container" class="marker-container">
+            <div id="a3-marker" class="alberta-marker" title="Click for weather"></div>
+            <div class="alberta-label">3</div>
+        </div>
+        <div id="a2-marker-container" class="marker-container">
+            <div id="a2-marker" class="alberta-marker" title="Click for weather"></div>
+            <div class="alberta-label">2</div>
+        </div>
+        <div id="a1-marker-container" class="marker-container">
+            <div id="a1-marker" class="alberta-marker" title="Click for weather"></div>
+            <div class="alberta-label">1</div>
         </div>
     </div>
 
@@ -100,15 +112,29 @@ add_shortcode('alberta_weather_map', function () {
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         const wrapper = document.getElementById('alberta-map-wrapper');
-        const markerContainer = document.getElementById('marker-container');
-        const marker = document.getElementById('alberta-marker');
+        const skylineMarkerContainer = document.getElementById('skyline-marker-container');
+        const a1MarkerContainer = document.getElementById('a1-marker-container');
+        const a2MarkerContainer = document.getElementById('a2-marker-container');
+        const a3MarkerContainer = document.getElementById('a3-marker-container');
+
+        const skylineMarker = document.getElementById('skyline-marker');
+        const a1Marker = document.getElementById('a1-marker');
+        const a2Marker = document.getElementById('a2-marker');
+        const a3Marker = document.getElementById('a3-marker');
+
         const chartCanvas = document.getElementById('weather-chart');
         const tableBody = document.getElementById('weather-table-body');
         const weatherOutput = document.getElementById('weather-output');
         let chart;
 
-        const lat = 49.9445277;
-        const lon = -114.0689444;
+        const skylineLat = 50.9215;
+        const skylineLon = -113.9573;
+        const a3Lat = 55.9215;
+        const a3Lon = -113.9573;
+        const a2Lat = 58.9215;
+        const a2Lon = -114.9573;
+        const a1Lat = 57.9215;
+        const a1Lon = -112.9573;
 
         const viewWidth = 660;
         const viewHeight = 700;
@@ -122,14 +148,8 @@ add_shortcode('alberta_weather_map', function () {
             return { x, y };
         }
 
-        const coords = project(lat, lon);
-        const scale = wrapper.offsetWidth / viewWidth;
-
-        markerContainer.style.left = `${coords.x * scale}px`;
-        markerContainer.style.top = `${coords.y * scale}px`;
-
-        marker.addEventListener('click', function () {
-            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,precipitation_probability_max&hourly=temperature_2m,precipitation&timezone=America%2FDenver&past_days=2&forecast_days=3`;
+        function getData(lat, lon, name) {
+            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,precipitation_probability_max&hourly=temperature_2m,precipitation&timezone=auto&past_days=1&forecast_days=2`;
 
             fetch(api)
                 .then(res => res.json())
@@ -139,34 +159,31 @@ add_shortcode('alberta_weather_map', function () {
                     const daily = data.daily;
                     const hourly = data.hourly;
 
+                    console.log(daily.time)
                     tableBody.innerHTML = `
-                        <h2>Skyline Weather</h2>
+                        <h2>${name}</h2>
                         <p>
-                            <strong>Date: </strong> ${new Date(daily.time[3]).toLocaleDateString()}<br/>
-                            <strong>Precipitation (mm): </strong> ${daily.precipitation_sum[3].toFixed(1)}<br/>
-                            <strong>Max Temp (°C): </strong> ${daily.temperature_2m_max[3].toFixed(1)}<br/>
+                            <strong>Date: </strong> ${daily.time[1]}<br/>
+                            <strong>Precipitation (mm): </strong> ${daily.precipitation_sum[1].toFixed(1)}<br/>
+                            <strong>Max Temp (°C): </strong> ${daily.temperature_2m_max[1].toFixed(1)}<br/>
                         </p>
                     `;
 
                     const today = new Date();
-                    const showDates = [
-                        new Date(today.getTime()).toISOString().slice(0, 10),
-                        today.toISOString().slice(0, 10),
-                        new Date(today.getTime()).toISOString().slice(0, 10)
-                    ];
-
                     const chartLabels = [];
                     const chartDataTemp = [];
                     const chartDataPercip = [];
 
                     for (let i = 0; i < hourly.time.length; i++) {
                         const date = hourly.time[i].slice(0, 10);
-                        if (showDates.includes(date)) {
                             const dt = new Date(hourly.time[i]);
-                            chartLabels.push(`${dt.getHours().toString().padStart(2, '0')}:00`);
+                            let dayString = '';
+                            if (dt.getHours().toString()==="0") {
+                                dayString = `${dt.toLocaleDateString('en-CA', { weekday: 'short', day: 'numeric' })} -`;
+                            }
+                            chartLabels.push(`${dayString} ${dt.getHours().toString().padStart(2, '0')}:00`);
                             chartDataTemp.push(hourly.temperature_2m[i]);
                             chartDataPercip.push(hourly.precipitation[i]);
-                        }
                     }
 
                     if (chart) chart.destroy();
@@ -198,7 +215,7 @@ add_shortcode('alberta_weather_map', function () {
                             plugins: {
                                 title: {
                                     display: true,
-                                    text: 'Skyline Hourly Temperature and Precipitation (Yesterday, Today, Tomorrow)'
+                                    text: `${name} Hourly Temperature and Precipitation (Yesterday, Today, Tomorrow)`
                                 }
                             },
                             scales: {
@@ -228,7 +245,27 @@ add_shortcode('alberta_weather_map', function () {
                     tableBody.innerHTML = `<tr><td colspan="4">Error loading data</td></tr>`;
                     console.error('API error:', err);
                 });
-        });
+        }
+
+        const scale = wrapper.offsetWidth / viewWidth;
+
+        skylineMarkerContainer.style.left = `${project(skylineLat, skylineLon).x * scale}px`;
+        skylineMarkerContainer.style.top = `${project(skylineLat, skylineLon).y * scale}px`;
+
+        a1MarkerContainer.style.left = `${project(a1Lat, a1Lon).x * scale}px`;
+        a1MarkerContainer.style.top = `${project(a1Lat, a1Lon).y * scale}px`;
+
+        a2MarkerContainer.style.left = `${project(a2Lat, a2Lon).x * scale}px`;
+        a2MarkerContainer.style.top = `${project(a2Lat, a2Lon).y * scale}px`;
+
+        a3MarkerContainer.style.left = `${project(a3Lat, a3Lon).x * scale}px`;
+        a3MarkerContainer.style.top = `${project(a3Lat, a3Lon).y * scale}px`;
+
+        skylineMarker.addEventListener('click', () => {getData(skylineLat, skylineLon, 'Skyline')});
+        a1Marker.addEventListener('click', () => {getData(a1Lat, a1Lon, 'A1')});
+        a2Marker.addEventListener('click', () => {getData(a2Lat, a2Lon, 'A2')});
+        a3Marker.addEventListener('click', () => {getData(a3Lat, a3Lon, 'A3')});
+
     });
     </script>
     <?php
