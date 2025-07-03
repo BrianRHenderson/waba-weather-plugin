@@ -127,8 +127,8 @@ add_shortcode('alberta_weather_map', function () {
         const weatherOutput = document.getElementById('weather-output');
         let chart;
 
-        const skylineLat = 50.9215;
-        const skylineLon = -113.9573;
+        const skylineLat = 49.94;
+        const skylineLon = -114.08;
         const a3Lat = 55.9215;
         const a3Lon = -113.9573;
         const a2Lat = 58.9215;
@@ -139,8 +139,8 @@ add_shortcode('alberta_weather_map', function () {
         const viewWidth = 660;
         const viewHeight = 700;
 
-        const minLat = 48.7, maxLat = 60.1;
-        const minLon = -120, maxLon = -109.8;
+        const minLat = 48.5, maxLat = 60;
+        const minLon = -120, maxLon = -110;
 
         function project(lat, lon) {
             const x = ((lon - minLon) / (maxLon - minLon)) * viewWidth;
