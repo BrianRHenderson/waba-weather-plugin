@@ -120,7 +120,7 @@ add_shortcode('alberta_weather_map', function () {
         }
         .weather-day h3 {
             margin: 0 0 10px;
-            font-size: 18px;
+            font-size: 16px;
         }
         .weather-day p {
             margin: 4px 0;
@@ -225,7 +225,7 @@ add_shortcode('alberta_weather_map', function () {
                     const div = document.createElement('div');
                     div.className = 'weather-day';
                     div.innerHTML = `
-                        <h3>${new Date(day).toLocaleDateString('en-CA',{ weekday: 'short' })} - ${new Date(day).toLocaleDateString('en-CA',{ day: 'numeric' })}</h3>
+                        <h3>${new Date(`${day}T12:00`).toString().slice(0, 10)}</h3>
                         <p><strong>High:</strong> ${data.daily.temperature_2m_max[index]} °C</p>
                         <p><strong>Low:</strong> ${data.daily.temperature_2m_min[index]} °C</p>
                         <p><strong>Rain:</strong> ${data.daily.precipitation_sum[index]} mm</p>
@@ -237,7 +237,7 @@ add_shortcode('alberta_weather_map', function () {
                 });
 
                 // Default to current day
-                showHourlyChart(days[2], data);
+                showHourlyChart(days[1], data);
             });
 
             function showHourlyChart(dayStr, data) {
@@ -248,7 +248,7 @@ add_shortcode('alberta_weather_map', function () {
                 data.hourly.time.forEach((t, i) => {
                     if (t.startsWith(dayStr)) {
                         const date = new Date(t);
-                        labels.push(formatAMPM(date));
+                        labels.push(formatAMPM(t));
                         temps.push(data.hourly.temperature_2m[i]);
                         precips.push(data.hourly.precipitation[i]);
                     }
@@ -305,7 +305,7 @@ add_shortcode('alberta_weather_map', function () {
                             },
                             title: {
                                 display: true,
-                                text: `Hourly Forecast for ${new Date(dayStr).toLocaleDateString('en-CA',{ weekday: 'long' , day: 'numeric' , month: 'long' , year: 'numeric' })}`,
+                                text: `Hourly Forecast for ${dayStr.slice(0, 10)}`,
                                 font: {
                                     size: 18
                                 }
@@ -348,6 +348,7 @@ add_shortcode('alberta_weather_map', function () {
         }
 
         function formatAMPM(date) {
+            date = new Date(date);
             var hours = date.getHours();
             var minutes = date.getMinutes();
             var ampm = hours >= 12 ? 'pm' : 'am';
