@@ -61,7 +61,6 @@ add_shortcode('alberta_weather_map', function () {
             left: 50%;
             transform: translateX(-50%);
             font-size: 14px;
-            color: black;
             background: rgba(255, 255, 255, 0.8);
             padding: 1px 2px;
             border-radius: 4px;
@@ -91,14 +90,50 @@ add_shortcode('alberta_weather_map', function () {
             margin-top: 20px;
             background: #fff;
         }
+        .weather-day-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px auto;
+        }
+        .weather-day {
+            border-radius: 16px;
+            padding: 20px;
+            width: 180px;
+            text-align: left;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .weather-day-wet {
+            border-radius: 16px;
+            padding: 20px;
+            width: 180px;
+            text-align: left;
+            cursor: pointer;
+            background: rgba(54, 162, 235, 0.5);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .weather-day:hover {
+            transform: translateY(-5px);
+        }
+        .weather-day h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+        }
+        .weather-day p {
+            margin: 4px 0;
+        }
+        #weather-chart {
+            max-width: 800px;
+            margin: 30px auto;
+            display: block;
+        }
     </style>
 
     <div class="alberta-map-wrapper" id="alberta-map-wrapper">
         <?php echo $svg_content; ?>
-        <div id="skyline-marker-container" class="marker-container">
-            <div id="skyline-marker" class="alberta-marker" title="Click for weather"></div>
-            <div class="alberta-label">Skyline</div>
-        </div>
         <div id="highwood-marker-container" class="marker-container">
             <div id="highwood-marker" class="alberta-marker" title="Click for weather"></div>
             <div class="alberta-label">The Highwood</div>
@@ -115,13 +150,16 @@ add_shortcode('alberta_weather_map', function () {
             <div id="calgary-marker" class="city-marker" title="Calgary"></div>
             <div class="alberta-label">Calgary</div>
         </div>
+        <div id="skyline-marker-container" class="marker-container">
+            <div id="skyline-marker" class="alberta-marker" title="Click for weather"></div>
+            <div class="alberta-label">Skyline</div>
+        </div>
 
     </div>
 
     <div id="weather-output">
-        <div id="weather-table-body">
-            <p>Loading...</p>
-        </div>
+        <div id="weather-crag-name"></div>
+        <div class="weather-day-container" id="weather-summaries"></div>
         <canvas id="weather-chart" width="800" height="300"></canvas>
     </div>
 
@@ -143,6 +181,9 @@ add_shortcode('alberta_weather_map', function () {
         const chartCanvas = document.getElementById('weather-chart');
         const tableBody = document.getElementById('weather-table-body');
         const weatherOutput = document.getElementById('weather-output');
+        const weatherSummaries = document.getElementById('weather-summaries');
+        const weatherCragName = document.getElementById('weather-crag-name');
+
         let chart;
 
         const skylineLat = 49.95;
@@ -169,102 +210,152 @@ add_shortcode('alberta_weather_map', function () {
         }
 
         function getData(lat, lon, name) {
-            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,precipitation_probability_max&hourly=temperature_2m,precipitation&timezone=auto&past_days=1&forecast_days=2`;
+            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=temperature_2m,precipitation&past_days=1&forecast_days=3&timezone=auto`;
 
             fetch(api)
-                .then(res => res.json())
-                .then(data => {
-                    weatherOutput.style.display = 'block';
+            .then(res => res.json())
+            .then(data => {
+                weatherOutput.style.display = 'block';
+                weatherCragName.innerHTML = `<h2>${name}</h2>`;
+                weatherSummaries.innerHTML = ``;
 
-                    const daily = data.daily;
-                    const hourly = data.hourly;
+                const days = data.daily.time;
 
-                    console.log(daily.time)
-                    tableBody.innerHTML = `
-                        <h2>${name}</h2>
-                        <p>
-                            <strong>Date: </strong> ${daily.time[1]}<br/>
-                            <strong>Precipitation (mm): </strong> ${daily.precipitation_sum[1].toFixed(1)}<br/>
-                            <strong>Max Temp (°C): </strong> ${daily.temperature_2m_max[1].toFixed(1)}<br/>
-                        </p>
+                days.forEach((day, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'weather-day';
+                    div.innerHTML = `
+                        <h3>${new Date(day).toLocaleDateString('en-CA',{ weekday: 'short' })} - ${new Date(day).toLocaleDateString('en-CA',{ day: 'numeric' })}</h3>
+                        <p><strong>High:</strong> ${data.daily.temperature_2m_max[index]} °C</p>
+                        <p><strong>Low:</strong> ${data.daily.temperature_2m_min[index]} °C</p>
+                        <p><strong>Rain:</strong> ${data.daily.precipitation_sum[index]} mm</p>
                     `;
+                    div.addEventListener('click', () => {
+                        showHourlyChart(day, data);
+                    });
+                    weatherSummaries.appendChild(div);
+                });
 
-                    const today = new Date();
-                    const chartLabels = [];
-                    const chartDataTemp = [];
-                    const chartDataPercip = [];
+                // Default to current day
+                showHourlyChart(days[2], data);
+            });
 
-                    for (let i = 0; i < hourly.time.length; i++) {
-                        const date = hourly.time[i].slice(0, 10);
-                            const dt = new Date(hourly.time[i]);
-                            let dayString = '';
-                            if (dt.getHours().toString()==="0") {
-                                dayString = `${dt.toLocaleDateString('en-CA', { weekday: 'short', day: 'numeric' })} -`;
-                            }
-                            chartLabels.push(`${dayString} ${dt.getHours().toString().padStart(2, '0')}:00`);
-                            chartDataTemp.push(hourly.temperature_2m[i]);
-                            chartDataPercip.push(hourly.precipitation[i]);
+            function showHourlyChart(dayStr, data) {
+                const labels = [];
+                const temps = [];
+                const precips = [];
+
+                data.hourly.time.forEach((t, i) => {
+                    if (t.startsWith(dayStr)) {
+                        const date = new Date(t);
+                        labels.push(formatAMPM(date));
+                        temps.push(data.hourly.temperature_2m[i]);
+                        precips.push(data.hourly.precipitation[i]);
                     }
+                });
 
-                    if (chart) chart.destroy();
-                    chart = new Chart(chartCanvas.getContext('2d'), {
-                        data: {
-                            labels: chartLabels,
-                            datasets: [{
+                if (chart) chart.destroy();
+                chart = new Chart(chartCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
                                 type: 'line',
-                                label: 'Hourly Temp (°C)',
-                                data: chartDataTemp,
-                                borderColor: 'rgba(255,99,132,1)',
-                                backgroundColor: 'rgba(255,99,132,0)',
-                                fill: true,
-                                yAxisID: "y0"
+                                label: 'Temperature (°C)',
+                                data: temps,
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                yAxisID: 'y0',
+                                tension: 0.4,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                borderWidth: 2
                             },
                             {
                                 type: 'bar',
-                                label: 'Hourly Precipitation (mm)',
-                                data: chartDataPercip,
-                                borderColor: 'rgb(99, 135, 255)',
-                                backgroundColor: 'rgb(99, 122, 255)',
-                                fill: true,
-                                yAxisID: "y1"
-
-                            }]
+                                label: 'Precipitation (mm)',
+                                data: precips,
+                                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                                borderRadius: 4,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        interaction: {
+                            intersect: false,
+                            mode: 'index',
+                            axis: 'x'
                         },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                title: {
-                                    display: true,
-                                    text: `${name} Hourly Temperature and Precipitation (Yesterday, Today, Tomorrow)`
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    font: {
+                                        size: 14,
+                                        family: 'Arial'
+                                    }
                                 }
                             },
-                            scales: {
-                                y0: {
-                                    max: 40,
-                                    min: 0,
-                                    position: 'left',
-                                    title: {
-                                        display: true,
-                                        text: 'Temperature (°C)'
-                                    }
+                            tooltip: {
+                                backgroundColor: '#333',
+                                titleFont: { size: 14 },
+                                bodyFont: { size: 13 },
+                                padding: 10
+                            },
+                            title: {
+                                display: true,
+                                text: `Hourly Forecast for ${new Date(dayStr).toLocaleDateString('en-CA',{ weekday: 'long' , day: 'numeric' , month: 'long' , year: 'numeric' })}`,
+                                font: {
+                                    size: 18
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: 'rgba(0,0,0,0.05)'
+                                }
+                            },
+                            y0: {
+                                min: 0,
+                                max: 30,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Temperature (°C)'
                                 },
-                                y1: {
-                                    max: 16,
-                                    min: 0,
-                                    position: 'right',
-                                    title: {
-                                        display: true,
-                                        text: 'Precipitation (mm)'
-                                    }
+                                grid: {
+                                    color: 'rgba(0,0,0,0.05)'
+                                }
+                            },
+                            y1: {
+                                min: 0,
+                                max: 25,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Precipitation (mm)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false
                                 }
                             }
                         }
-                    });
-                })
-                .catch(err => {
-                    tableBody.innerHTML = `<tr><td colspan="4">Error loading data</td></tr>`;
-                    console.error('API error:', err);
+                    }
                 });
+            }
+        }
+
+        function formatAMPM(date) {
+            var hours = date.getHours();
+            var minutes = date.getMinutes();
+            var ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            minutes = minutes < 10 ? '0'+minutes : minutes;
+            var strTime = hours + ':' + minutes + ' ' + ampm;
+            return strTime;
         }
 
         const scale = wrapper.offsetWidth / viewWidth;
