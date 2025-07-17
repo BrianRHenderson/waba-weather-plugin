@@ -44,6 +44,17 @@ add_shortcode('alberta_weather_map', function () {
             cursor: pointer;
         }
 
+        .city-marker {
+            width: 14px;
+            height: 14px;
+            background: blue;
+            border: 2px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
         .alberta-label {
             position: absolute;
             top: 16px;
@@ -52,7 +63,7 @@ add_shortcode('alberta_weather_map', function () {
             font-size: 14px;
             color: black;
             background: rgba(255, 255, 255, 0.8);
-            padding: 2px 6px;
+            padding: 1px 2px;
             border-radius: 4px;
             white-space: nowrap;
             pointer-events: none;
@@ -88,18 +99,23 @@ add_shortcode('alberta_weather_map', function () {
             <div id="skyline-marker" class="alberta-marker" title="Click for weather"></div>
             <div class="alberta-label">Skyline</div>
         </div>
-        <div id="a3-marker-container" class="marker-container">
-            <div id="a3-marker" class="alberta-marker" title="Click for weather"></div>
-            <div class="alberta-label">3</div>
+        <div id="highwood-marker-container" class="marker-container">
+            <div id="highwood-marker" class="alberta-marker" title="Click for weather"></div>
+            <div class="alberta-label">The Highwood</div>
         </div>
-        <div id="a2-marker-container" class="marker-container">
-            <div id="a2-marker" class="alberta-marker" title="Click for weather"></div>
-            <div class="alberta-label">2</div>
+        <div id="cathedral-marker-container" class="marker-container">
+            <div id="cathedral-marker" class="alberta-marker" title="Click for weather"></div>
+            <div class="alberta-label">Cathedral</div>
         </div>
-        <div id="a1-marker-container" class="marker-container">
-            <div id="a1-marker" class="alberta-marker" title="Click for weather"></div>
-            <div class="alberta-label">1</div>
+        <div id="bigChoss-marker-container" class="marker-container">
+            <div id="bigChoss-marker" class="alberta-marker" title="Click for weather"></div>
+            <div class="alberta-label">Big Choss</div>
         </div>
+        <div id="calgary-marker-container" class="marker-container">
+            <div id="calgary-marker" class="city-marker" title="Calgary"></div>
+            <div class="alberta-label">Calgary</div>
+        </div>
+
     </div>
 
     <div id="weather-output">
@@ -113,33 +129,37 @@ add_shortcode('alberta_weather_map', function () {
     document.addEventListener('DOMContentLoaded', function () {
         const wrapper = document.getElementById('alberta-map-wrapper');
         const skylineMarkerContainer = document.getElementById('skyline-marker-container');
-        const a1MarkerContainer = document.getElementById('a1-marker-container');
-        const a2MarkerContainer = document.getElementById('a2-marker-container');
-        const a3MarkerContainer = document.getElementById('a3-marker-container');
+        const bigChossMarkerContainer = document.getElementById('bigChoss-marker-container');
+        const cathedralMarkerContainer = document.getElementById('cathedral-marker-container');
+        const highwoodMarkerContainer = document.getElementById('highwood-marker-container');
+        const calgaryMarkerContainer = document.getElementById('calgary-marker-container');
 
         const skylineMarker = document.getElementById('skyline-marker');
-        const a1Marker = document.getElementById('a1-marker');
-        const a2Marker = document.getElementById('a2-marker');
-        const a3Marker = document.getElementById('a3-marker');
+        const bigChossMarker = document.getElementById('bigChoss-marker');
+        const cathedralMarker = document.getElementById('cathedral-marker');
+        const highwoodMarker = document.getElementById('highwood-marker');
+        const calgaryMarker = document.getElementById('calgary-marker');
 
         const chartCanvas = document.getElementById('weather-chart');
         const tableBody = document.getElementById('weather-table-body');
         const weatherOutput = document.getElementById('weather-output');
         let chart;
 
-        const skylineLat = 49.94;
-        const skylineLon = -114.08;
-        const a3Lat = 55.9215;
-        const a3Lon = -113.9573;
-        const a2Lat = 58.9215;
-        const a2Lon = -114.9573;
-        const a1Lat = 57.9215;
-        const a1Lon = -112.9573;
+        const skylineLat = 49.95;
+        const skylineLon = -114.04;
+        const highwoodLat = 50.38;
+        const highwoodLon = -114.64;
+        const cathedralLat = 51.43;
+        const cathedralLon = -116.40;
+        const bigChossLat = 51.12;
+        const bigChossLon = -115.11;
+        const calgaryLat = 51.05;
+        const calgaryLon = -114.06;
 
         const viewWidth = 660;
-        const viewHeight = 700;
+        const viewHeight = 515;
 
-        const minLat = 48.5, maxLat = 60;
+        const minLat = 49, maxLat = 54;
         const minLon = -120, maxLon = -110;
 
         function project(lat, lon) {
@@ -252,20 +272,24 @@ add_shortcode('alberta_weather_map', function () {
         skylineMarkerContainer.style.left = `${project(skylineLat, skylineLon).x * scale}px`;
         skylineMarkerContainer.style.top = `${project(skylineLat, skylineLon).y * scale}px`;
 
-        a1MarkerContainer.style.left = `${project(a1Lat, a1Lon).x * scale}px`;
-        a1MarkerContainer.style.top = `${project(a1Lat, a1Lon).y * scale}px`;
+        bigChossMarkerContainer.style.left = `${project(bigChossLat, bigChossLon).x * scale}px`;
+        bigChossMarkerContainer.style.top = `${project(bigChossLat, bigChossLon).y * scale}px`;
 
-        a2MarkerContainer.style.left = `${project(a2Lat, a2Lon).x * scale}px`;
-        a2MarkerContainer.style.top = `${project(a2Lat, a2Lon).y * scale}px`;
+        cathedralMarkerContainer.style.left = `${project(cathedralLat, cathedralLon).x * scale}px`;
+        cathedralMarkerContainer.style.top = `${project(cathedralLat, cathedralLon).y * scale}px`;
 
-        a3MarkerContainer.style.left = `${project(a3Lat, a3Lon).x * scale}px`;
-        a3MarkerContainer.style.top = `${project(a3Lat, a3Lon).y * scale}px`;
+        highwoodMarkerContainer.style.left = `${project(highwoodLat, highwoodLon).x * scale}px`;
+        highwoodMarkerContainer.style.top = `${project(highwoodLat, highwoodLon).y * scale}px`;
+
+        calgaryMarkerContainer.style.left = `${project(calgaryLat, calgaryLon).x * scale}px`;
+        calgaryMarkerContainer.style.top = `${project(calgaryLat, calgaryLon).y * scale}px`;
+
 
         skylineMarker.addEventListener('click', () => {getData(skylineLat, skylineLon, 'Skyline')});
-        a1Marker.addEventListener('click', () => {getData(a1Lat, a1Lon, 'A1')});
-        a2Marker.addEventListener('click', () => {getData(a2Lat, a2Lon, 'A2')});
-        a3Marker.addEventListener('click', () => {getData(a3Lat, a3Lon, 'A3')});
-
+        bigChossMarker.addEventListener('click', () => {getData(bigChossLat, bigChossLon, 'Big Choss')});
+        cathedralMarker.addEventListener('click', () => {getData(cathedralLat, cathedralLon, 'Cathedral')});
+        highwoodMarker.addEventListener('click', () => {getData(highwoodLat, highwoodLon, 'The Highwood')});
+        calgaryMarker.addEventListener('click', () => {getData(calgaryLat, calgaryLon, 'Calgary')});
     });
     </script>
     <?php
