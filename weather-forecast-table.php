@@ -69,7 +69,7 @@ add_shortcode('alberta_weather_map', function () {
         }
 
         #weather-output {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 40px auto;
             display: none;
         }
@@ -88,6 +88,7 @@ add_shortcode('alberta_weather_map', function () {
 
         #weather-output canvas {
             margin-top: 20px;
+            width: 100%;
             background: #fff;
         }
         .weather-day-container {
@@ -99,19 +100,9 @@ add_shortcode('alberta_weather_map', function () {
         .weather-day {
             border-radius: 16px;
             padding: 20px;
-            width: 180px;
+            width: 200px;
             text-align: left;
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-        }
-        .weather-day-wet {
-            border-radius: 16px;
-            padding: 20px;
-            width: 180px;
-            text-align: left;
-            cursor: pointer;
-            background: rgba(54, 162, 235, 0.5);
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             transition: transform 0.2s;
         }
@@ -126,7 +117,7 @@ add_shortcode('alberta_weather_map', function () {
             margin: 4px 0;
         }
         #weather-chart {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 30px auto;
             display: block;
         }
@@ -210,11 +201,12 @@ add_shortcode('alberta_weather_map', function () {
         }
 
         function getData(lat, lon, name) {
-            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=temperature_2m,precipitation&past_days=1&forecast_days=3&timezone=auto`;
+            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=temperature_2m,precipitation&past_days=2&forecast_days=4&timezone=auto`;
 
             fetch(api)
             .then(res => res.json())
             .then(data => {
+                const todayIndex = 2;
                 weatherOutput.style.display = 'block';
                 weatherCragName.innerHTML = `<h2>${name}</h2>`;
                 weatherSummaries.innerHTML = ``;
@@ -222,6 +214,7 @@ add_shortcode('alberta_weather_map', function () {
                 const days = data.daily.time;
 
                 days.forEach((day, index) => {
+                    const istoday = index === todayIndex;
                     const div = document.createElement('div');
                     div.className = 'weather-day';
                     div.innerHTML = `
@@ -229,6 +222,7 @@ add_shortcode('alberta_weather_map', function () {
                         <p><strong>High:</strong> ${data.daily.temperature_2m_max[index]} °C</p>
                         <p><strong>Low:</strong> ${data.daily.temperature_2m_min[index]} °C</p>
                         <p><strong>Rain:</strong> ${data.daily.precipitation_sum[index]} mm</p>
+                        ${istoday ? '<h3>Today</h3>' : ''}
                     `;
                     div.addEventListener('click', () => {
                         showHourlyChart(day, data);
@@ -237,7 +231,7 @@ add_shortcode('alberta_weather_map', function () {
                 });
 
                 // Default to current day
-                showHourlyChart(days[1], data);
+                showHourlyChart(days[todayIndex], data);
             });
 
             function showHourlyChart(dayStr, data) {
@@ -331,7 +325,7 @@ add_shortcode('alberta_weather_map', function () {
                             },
                             y1: {
                                 min: 0,
-                                max: 25,
+                                max: 15,
                                 position: 'right',
                                 title: {
                                     display: true,
