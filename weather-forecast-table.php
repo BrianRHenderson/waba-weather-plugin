@@ -5,6 +5,10 @@
  * Version: 1.2
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly
+}
+
 add_action('wp_enqueue_scripts', function () {
     wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', [], null, true);
 });
@@ -119,9 +123,19 @@ add_shortcode('alberta_weather_map', function () {
         #weather-chart {
             max-width: 1200px;
             margin: 30px auto;
+            padding: 20px;
             display: block;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .weather-license-details {
+              color: #999;
         }
     </style>
+
+    <div class="weather-page-instructions">
+        <p>Click a location on the map to load weather data.</p>
+    </div>
 
     <div class="alberta-map-wrapper" id="alberta-map-wrapper">
         <?php echo $svg_content; ?>
@@ -145,16 +159,19 @@ add_shortcode('alberta_weather_map', function () {
             <div id="skyline-marker" class="alberta-marker" title="Click for weather"></div>
             <div class="alberta-label">Skyline</div>
         </div>
-
     </div>
 
     <div id="weather-output">
         <div id="weather-crag-name"></div>
         <div class="weather-day-container" id="weather-summaries"></div>
         <canvas id="weather-chart" width="800" height="300"></canvas>
+        <small class="weather-license-details">
+            Data Source: <a href="https://eccc-msc.github.io/open-data/licence/readme_en/">Environment and Climate Change Canada</a> and <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a>
+        </small>
     </div>
 
     <script>
+
     document.addEventListener('DOMContentLoaded', function () {
         const wrapper = document.getElementById('alberta-map-wrapper');
         const skylineMarkerContainer = document.getElementById('skyline-marker-container');
@@ -201,7 +218,7 @@ add_shortcode('alberta_weather_map', function () {
         }
 
         function getData(lat, lon, name) {
-            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=temperature_2m,precipitation&past_days=2&forecast_days=4&timezone=auto`;
+            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=temperature_2m,precipitation&past_days=2&forecast_days=4&timezone=auto&models=gem_seamless`;
 
             fetch(api)
             .then(res => res.json())
@@ -214,15 +231,18 @@ add_shortcode('alberta_weather_map', function () {
                 const days = data.daily.time;
 
                 days.forEach((day, index) => {
+                    const todayDate = new Date(`${day}T12:00`);
+                    const todayWeekday = todayDate.toString().slice(0, 3);
+                    const todayDayMonth = todayDate.toString().slice(4, 10);
                     const istoday = index === todayIndex;
                     const div = document.createElement('div');
                     div.className = 'weather-day';
                     div.innerHTML = `
-                        <h3>${new Date(`${day}T12:00`).toString().slice(0, 10)}</h3>
+                        ${istoday ? `<strong>${todayWeekday} (Today)</strong>` : `<strong>${todayWeekday}</strong>`}
+                        <h4>${todayDayMonth}</h4>
                         <p><strong>High:</strong> ${data.daily.temperature_2m_max[index]} °C</p>
                         <p><strong>Low:</strong> ${data.daily.temperature_2m_min[index]} °C</p>
                         <p><strong>Rain:</strong> ${data.daily.precipitation_sum[index]} mm</p>
-                        ${istoday ? '<h3>Today</h3>' : ''}
                     `;
                     div.addEventListener('click', () => {
                         showHourlyChart(day, data);
