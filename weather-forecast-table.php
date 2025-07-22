@@ -51,7 +51,7 @@ add_shortcode('alberta_weather_map', function () {
         .city-marker {
             width: 14px;
             height: 14px;
-            background: blue;
+            background: #2b6cb0;
             border: 2px solid white;
             border-radius: 50%;
             transform: translate(-50%, -50%);
@@ -134,29 +134,29 @@ add_shortcode('alberta_weather_map', function () {
     </style>
 
     <div class="weather-page-instructions">
-        <p>Click a location on the map to load weather data.</p>
+        <p>Click a location to load its weather forecast.</p>
     </div>
 
     <div class="alberta-map-wrapper" id="alberta-map-wrapper">
         <?php echo $svg_content; ?>
         <div id="highwood-marker-container" class="marker-container">
-            <div id="highwood-marker" class="alberta-marker" title="Click for weather"></div>
+            <div id="highwood-marker" class="alberta-marker" tabindex="0" aria-label="The Highwood weather marker" title="Click for weather"></div>
             <div class="alberta-label">The Highwood</div>
         </div>
         <div id="cathedral-marker-container" class="marker-container">
-            <div id="cathedral-marker" class="alberta-marker" title="Click for weather"></div>
+            <div id="cathedral-marker" class="alberta-marker" tabindex="1" aria-label="Cathedral weather marker" title="Click for weather"></div>
             <div class="alberta-label">Cathedral</div>
         </div>
         <div id="bigChoss-marker-container" class="marker-container">
-            <div id="bigChoss-marker" class="alberta-marker" title="Click for weather"></div>
+            <div id="bigChoss-marker" class="alberta-marker" tabindex="2" aria-label="Big Choss weather marker" title="Click for weather"></div>
             <div class="alberta-label">Big Choss</div>
         </div>
         <div id="calgary-marker-container" class="marker-container">
-            <div id="calgary-marker" class="city-marker" title="Calgary"></div>
+            <div id="calgary-marker" class="city-marker" tabindex="3" aria-label="Calgary weather marker" title="Click for weather"></div>
             <div class="alberta-label">Calgary</div>
         </div>
         <div id="skyline-marker-container" class="marker-container">
-            <div id="skyline-marker" class="alberta-marker" title="Click for weather"></div>
+            <div id="skyline-marker" class="alberta-marker" tabindex="4" aria-label="Skyline weather marker" title="Click for weather"></div>
             <div class="alberta-label">Skyline</div>
         </div>
     </div>
@@ -220,9 +220,22 @@ add_shortcode('alberta_weather_map', function () {
         function getData(lat, lon, name) {
             const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=temperature_2m,precipitation&past_days=2&forecast_days=4&timezone=auto&models=gem_seamless`;
 
-            fetch(api)
-            .then(res => res.json())
-            .then(data => {
+            const cacheKey = `${lat},${lon}`;
+            if (sessionStorage.getItem(cacheKey)) {
+                showWeather(JSON.parse(sessionStorage.getItem(cacheKey)));
+            } else {
+                fetch(api)
+                    .then(res => res.json())
+                    .then(data => {
+                        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+                        showWeather(data);
+                    })
+                    .catch(err => {
+                        weatherOutput.innerHTML = `<p style="color:red;">Could not load weather forecast. Please try again later.</p>`;
+                    });
+            }
+
+            function showWeather(data) {
                 const todayIndex = 2;
                 weatherOutput.style.display = 'block';
                 weatherCragName.innerHTML = `<h2>${name}</h2>`;
@@ -252,8 +265,8 @@ add_shortcode('alberta_weather_map', function () {
 
                 // Default to current day
                 showHourlyChart(days[todayIndex], data);
-            });
-
+            }
+           
             function showHourlyChart(dayStr, data) {
                 const labels = [];
                 const temps = [];
