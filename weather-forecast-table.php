@@ -1,8 +1,9 @@
 <?php
 /**
- * Plugin Name: Alberta Weather Map with Skyline Label
- * Description: Shows a clickable marker labeled "Skyline" on an SVG map of Alberta and fetches weather data.
- * Version: 1.2
+ * Plugin Name: WABA Weather Forecast
+ * Description: Shows clickable markers on an SVG map of Alberta and fetches weather data on click.
+ * Version: 1.4
+ * Author: Brian Henderson
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -14,8 +15,18 @@ add_action('wp_enqueue_scripts', function () {
 });
 
 add_shortcode('alberta_weather_map', function () {
-    $upload_dir = wp_upload_dir();
-    $svg_path = $upload_dir['basedir'] . '/Canada_Alberta_location_map.svg';
+    function my_get_plugin_dir() {
+        if ( defined( 'WP_SITEURL' ) ) {
+            $base_url = WP_SITEURL;
+        } else {
+            $base_url = get_option( 'siteurl' );
+        }
+
+        return str_replace( $base_url, ABSPATH, plugins_url() );
+    }
+
+    $plugin_dir = my_get_plugin_dir() . '/weather-forecast-table';
+    $svg_path = $plugin_dir . '/Canada_Alberta_location_map.svg';
     $svg_content = file_exists($svg_path) ? file_get_contents($svg_path) : '<svg><text x="10" y="20">Map not found</text></svg>';
 
     ob_start();
@@ -76,12 +87,6 @@ add_shortcode('alberta_weather_map', function () {
             max-width: 1200px;
             margin: 40px auto;
             display: none;
-        }
-
-        #weather-output table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
         }
 
         #weather-output th, #weather-output td {
@@ -225,8 +230,6 @@ add_shortcode('alberta_weather_map', function () {
             const cached = getWithExpiry(cacheKey);
 
             weatherOutput.style.display = 'block';
-            weatherCragName.innerHTML = '';
-            weatherSummaries.innerHTML = '';
 
             if (cached) {
                 showWeather(cached, name);
@@ -249,6 +252,7 @@ add_shortcode('alberta_weather_map', function () {
         function showWeather(data, name) {
             const todayIndex = 2;
             weatherCragName.innerHTML = `<h2>${name}</h2>`;
+            weatherSummaries.innerHTML = '';
             const days = data.daily.time;
 
             days.forEach((day, index) => {
@@ -268,7 +272,6 @@ add_shortcode('alberta_weather_map', function () {
             div.addEventListener('click', () => showHourlyChart(day, data));
                 weatherSummaries.appendChild(div);
             });
-
             showHourlyChart(days[todayIndex], data);
         }
            
