@@ -2,13 +2,9 @@
 /**
  * Plugin Name: WABA Weather Forecast
  * Description: Shows clickable markers on an SVG map of Alberta and fetches weather data on click.
- * Version: 1.4
+ * Version: 1.4.1
  * Author: Brian Henderson
  */
-
-if ( ! defined( 'ABSPATH' ) ) {
-	exit; // Exit if accessed directly
-}
 
 add_action('wp_enqueue_scripts', function () {
     wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', [], null, true);
@@ -72,9 +68,21 @@ add_shortcode('alberta_weather_map', function () {
 
         .alberta-label {
             position: absolute;
-            top: 16px;
+            top: 10px;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translateX(-60%);
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 1px 2px;
+            border-radius: 4px;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        .alberta-label-offset {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-30%);
             font-size: 14px;
             background: rgba(255, 255, 255, 0.8);
             padding: 1px 2px;
@@ -160,9 +168,13 @@ add_shortcode('alberta_weather_map', function () {
             <div id="calgary-marker" class="city-marker" tabindex="3" aria-label="Calgary weather marker" title="Click for weather"></div>
             <div class="alberta-label">Calgary</div>
         </div>
+        <div id="frank-marker-container" class="marker-container">
+            <div id="frank-marker" class="alberta-marker" tabindex="4" aria-label="Frank weather marker" title="Click for weather"></div>
+            <div class="alberta-label">Frank</div>
+        </div>
         <div id="skyline-marker-container" class="marker-container">
             <div id="skyline-marker" class="alberta-marker" tabindex="4" aria-label="Skyline weather marker" title="Click for weather"></div>
-            <div class="alberta-label">Skyline</div>
+            <div class="alberta-label-offset">Skyline</div>
         </div>
     </div>
 
@@ -179,11 +191,12 @@ add_shortcode('alberta_weather_map', function () {
 
     document.addEventListener('DOMContentLoaded', function () {
         const locations = {
-            skyline: { lat: 49.95, lon: -114.04, name: "Skyline" },
-            highwood: { lat: 50.38, lon: -114.64, name: "The Highwood" },
-            cathedral: { lat: 51.43, lon: -116.40, name: "Cathedral" },
-            bigChoss: { lat: 51.12, lon: -115.11, name: "Big Choss" },
+            skyline: { lat: 49.9408, lon: -114.0806, name: "Skyline" },
+            highwood: { lat: 50.3873, lon: -114.6436, name: "The Highwood" },
+            cathedral: { lat: 51.4305, lon: -116.4022, name: "Cathedral" },
+            bigChoss: { lat: 51.1163, lon: -115.1079, name: "Big Choss" },
             calgary: { lat: 51.05, lon: -114.06, name: "Calgary" },
+            frank: { lat: 49.5963, lon: -114.3966, name: "Frank" },
         };
 
         const viewWidth = 660, viewHeight = 515;
