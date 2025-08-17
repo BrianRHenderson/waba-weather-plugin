@@ -387,6 +387,7 @@ add_shortcode('alberta_weather_map', function () {
             marker.addEventListener('click', () => getData(loc.lat, loc.lon, loc.name));
             if (location.hash === `#${id}`) {
                 getData(loc.lat, loc.lon, loc.name);
+                container.scrollIntoView();
             }
         });
         window.addEventListener('hashchange', () => {
