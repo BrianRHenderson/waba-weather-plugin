@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WABA Weather Forecast
  * Description: Shows clickable markers on an SVG map of Alberta and fetches weather data on click.
- * Version: 1.4.1
+ * Version: 1.5.1
  * Author: Brian Henderson
  */
 
@@ -11,18 +11,8 @@ add_action('wp_enqueue_scripts', function () {
 });
 
 add_shortcode('alberta_weather_map', function () {
-    function my_get_plugin_dir() {
-        if ( defined( 'WP_SITEURL' ) ) {
-            $base_url = WP_SITEURL;
-        } else {
-            $base_url = get_option( 'siteurl' );
-        }
-
-        return str_replace( $base_url, ABSPATH, plugins_url() );
-    }
-
-    $plugin_dir = my_get_plugin_dir() . '/weather-forecast-table';
-    $svg_path = $plugin_dir . '/Canada_Alberta_location_map.svg';
+    $upload_dir = wp_upload_dir();
+    $svg_path = $upload_dir['basedir'] . '/Canada_Alberta_location_map.svg';
     $svg_content = file_exists($svg_path) ? file_get_contents($svg_path) : '<svg><text x="10" y="20">Map not found</text></svg>';
 
     ob_start();
