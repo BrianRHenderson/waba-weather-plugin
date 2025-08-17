@@ -237,7 +237,7 @@ add_shortcode('alberta_weather_map', function () {
         }
 
         function getData(lat, lon, name) {
-            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=temperature_2m,precipitation&past_days=2&forecast_days=4&timezone=auto&models=gem_seamless`;
+            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min&hourly=temperature_2m,precipitation,precipitation_probability&past_days=2&forecast_days=4&timezone=auto&models=gem_seamless`;
 
             const cacheKey = `${lat},${lon}`;
             const cached = getWithExpiry(cacheKey);
@@ -289,12 +289,13 @@ add_shortcode('alberta_weather_map', function () {
         }
            
         function showHourlyChart(dayStr, data) {
-        const labels = [], temps = [], precips = [];
+        const labels = [], temps = [], precips = [], precipChance = [];
             data.hourly.time.forEach((t, i) => {
                 if (t.startsWith(dayStr)) {
                     labels.push(formatAMPM(t));
                     temps.push(data.hourly.temperature_2m[i]);
                     precips.push(data.hourly.precipitation[i]);
+                    precipChance.push(data.hourly.precipitation_probability[i]);
                 }
             });
 
@@ -319,9 +320,19 @@ add_shortcode('alberta_weather_map', function () {
                             type: 'bar',
                             label: 'Precipitation (mm)',
                             data: precips,
-                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            backgroundColor: 'rgba(54, 163, 235, 0.5)',
                             borderRadius: 4,
-                            yAxisID: 'y1'
+                            yAxisID: 'y1',
+                            barPercentage: 0.8
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Precipitation Probability (%)',
+                            data: precipChance,
+                            backgroundColor: 'rgba(54, 163, 235, 0.2)',
+                            pointRadius: 2,
+                            yAxisID: 'y2',
+                            barPercentage: 0.2
                         }
                     ]
                 },
@@ -339,6 +350,9 @@ add_shortcode('alberta_weather_map', function () {
                         }
                     },
                     scales: {
+                        x: {
+                            stacked: true
+                        },
                         y0: {
                             min: 0,
                             max: 30,
@@ -351,7 +365,13 @@ add_shortcode('alberta_weather_map', function () {
                             position: 'right',
                         title: { display: true, text: 'Precipitation (mm)' },
                         grid: { drawOnChartArea: false }
-                        }
+                        },
+                        y2: {
+                            min: 0,
+                            max: 100,
+                            display: false,
+                        title: { display: false }
+                        },
                     }
                 }
             });
