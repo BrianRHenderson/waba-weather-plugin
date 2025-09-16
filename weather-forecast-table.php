@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WABA Weather Forecast
  * Description: Shows clickable markers on an SVG map of Alberta and fetches weather data on click.
- * Version: 1.5.1
+ * Version: 1.5.3
  * Author: Brian Henderson
  */
 
@@ -163,7 +163,7 @@ add_shortcode('alberta_weather_map', function () {
             <div class="alberta-label">Frank</div>
         </div>
         <div id="skyline-marker-container" class="marker-container">
-            <div id="skyline-marker" class="alberta-marker" tabindex="4" aria-label="Skyline weather marker" title="Click for weather"></div>
+            <div id="skyline-marker" class="alberta-marker" tabindex="5" aria-label="Skyline weather marker" title="Click for weather"></div>
             <div class="alberta-label-offset">Skyline</div>
         </div>
     </div>
@@ -212,22 +212,22 @@ add_shortcode('alberta_weather_map', function () {
                 value: value,
                 expiry: now.getTime() + ttlSeconds * 1000
             };
-            sessionStorage.setItem(key, JSON.stringify(item));
+            localStorage.setItem(key, JSON.stringify(item));
         }
 
         function getWithExpiry(key) {
-            const itemStr = sessionStorage.getItem(key);
+            const itemStr = localStorage.getItem(key);
             if (!itemStr) return null;
             const item = JSON.parse(itemStr);
             if (new Date().getTime() > item.expiry) {
-                sessionStorage.removeItem(key);
+                localStorage.removeItem(key);
                 return null;
             }
             return item.value;
         }
 
         function getData(lat, lon, name) {
-            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min&hourly=temperature_2m,precipitation,precipitation_probability&past_days=2&forecast_days=4&timezone=auto&models=gem_seamless`;
+            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min&hourly=temperature_2m,precipitation,precipitation_probability&past_days=2&forecast_days=4&timezone=auto`;
 
             const cacheKey = `${lat},${lon}`;
             const cached = getWithExpiry(cacheKey);
@@ -242,11 +242,9 @@ add_shortcode('alberta_weather_map', function () {
             fetch(api)
                 .then(res => res.json())
                 .then(data => {
+                setWithExpiry(cacheKey, data, 3600);
                 showWeather(data, name);
             })
-            .then((data) => {
-                setWithExpiry(cacheKey, data, 3600);
-                })
             .catch(err => {
                 weatherOutput.innerHTML = `<p style="color:red;">Could not load weather forecast. Please try again later.</p>`;
             });
