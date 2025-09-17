@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WABA Weather Forecast
  * Description: Shows clickable markers on an SVG map of Alberta and fetches weather data on click.
- * Version: 1.5.3
+ * Version: 1.6.0
  * Author: Brian Henderson
  */
 
@@ -20,8 +20,8 @@ add_shortcode('alberta_weather_map', function () {
     <style>
         .alberta-map-wrapper {
             position: relative;
-            max-width: 600px;
-            margin: 30px auto;
+            max-width: 70%;
+            margin: 20px auto;
         }
 
         .alberta-map-wrapper svg {
@@ -34,21 +34,10 @@ add_shortcode('alberta_weather_map', function () {
             position: absolute;
         }
 
-        .alberta-marker {
-            width: 14px;
-            height: 14px;
-            background: red;
-            border: 2px solid white;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
-            cursor: pointer;
-        }
-
+        .alberta-marker,
         .city-marker {
             width: 14px;
             height: 14px;
-            background: #2b6cb0;
             border: 2px solid white;
             border-radius: 50%;
             transform: translate(-50%, -50%);
@@ -56,30 +45,23 @@ add_shortcode('alberta_weather_map', function () {
             cursor: pointer;
         }
 
-        .alberta-label {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-60%);
-            font-size: 14px;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 1px 2px;
-            border-radius: 4px;
-            white-space: nowrap;
-            pointer-events: none;
-        }
+        .alberta-marker { background: red; }
+        .city-marker { background: #2b6cb0; }
+
+        .alberta-label,
         .alberta-label-offset {
             position: absolute;
             top: 10px;
             left: 50%;
-            transform: translateX(-30%);
+            transform: translateX(-50%);
             font-size: 14px;
             background: rgba(255, 255, 255, 0.8);
-            padding: 1px 2px;
+            padding: 2px 4px;
             border-radius: 4px;
             white-space: nowrap;
             pointer-events: none;
         }
+        .alberta-label-offset { transform: translateX(-30%); }
 
         #weather-output {
             max-width: 1200px;
@@ -95,15 +77,19 @@ add_shortcode('alberta_weather_map', function () {
 
         #weather-output canvas {
             margin-top: 20px;
-            width: 100%;
+            width: 100% !important;
+            height: auto !important;
             background: #fff;
         }
+
         .weather-day-container {
             display: flex;
             justify-content: center;
             gap: 20px;
             margin: 20px auto;
+            flex-wrap: wrap;
         }
+
         .weather-day {
             border-radius: 16px;
             padding: 20px;
@@ -112,6 +98,7 @@ add_shortcode('alberta_weather_map', function () {
             cursor: pointer;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             transition: transform 0.2s;
+            background: #fff;
         }
         .weather-day:hover {
             transform: translateY(-5px);
@@ -123,16 +110,47 @@ add_shortcode('alberta_weather_map', function () {
         .weather-day p {
             margin: 4px 0;
         }
+
         #weather-chart {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 20px;
-            display: block;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100% !important;
+            height: auto !important;
+            max-height: 400px; /* desktop/tablet */
         }
+
         .weather-license-details {
-              color: #999;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            .alberta-map-wrapper {
+                max-width: 100%;
+            }
+
+            #weather-chart {
+                max-height: 250px;
+            }
+            .alberta-marker,
+            .city-marker {
+                width: 10px;
+                height: 10px;
+            }
+            .alberta-label,
+            .alberta-label-offset {
+                font-size: 9px;
+            }
+            .weather-day-container {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                gap: 10px;
+                padding: 10px;
+                justify-content: flex-start;
+            }
+
+            .weather-day {
+                flex: 0 0 50%;
+                max-width: 250px;
+            }
         }
     </style>
 
@@ -171,14 +189,13 @@ add_shortcode('alberta_weather_map', function () {
     <div id="weather-output">
         <div id="weather-crag-name"></div>
         <div class="weather-day-container" id="weather-summaries"></div>
-        <canvas id="weather-chart" width="800" height="300"></canvas>
+        <canvas id="weather-chart"></canvas>
         <small class="weather-license-details">
             Data Source: <a href="https://eccc-msc.github.io/open-data/licence/readme_en/">Environment and Climate Change Canada</a> and <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a>
         </small>
     </div>
 
     <script>
-
     document.addEventListener('DOMContentLoaded', function () {
         const locations = {
             skyline: { lat: 49.9408, lon: -114.0806, name: "Skyline" },
@@ -206,12 +223,19 @@ add_shortcode('alberta_weather_map', function () {
             return { x, y };
         }
 
+        function positionMarkers() {
+            const scale = wrapper.offsetWidth / viewWidth;
+            Object.entries(locations).forEach(([id, loc]) => {
+                const pos = project(loc.lat, loc.lon);
+                const container = document.getElementById(`${id}-marker-container`);
+                container.style.left = `${pos.x * scale}px`;
+                container.style.top = `${pos.y * scale}px`;
+            });
+        }
+
         function setWithExpiry(key, value, ttlSeconds) {
             const now = new Date();
-            const item = {
-                value: value,
-                expiry: now.getTime() + ttlSeconds * 1000
-            };
+            const item = { value: value, expiry: now.getTime() + ttlSeconds * 1000 };
             localStorage.setItem(key, JSON.stringify(item));
         }
 
@@ -227,7 +251,7 @@ add_shortcode('alberta_weather_map', function () {
         }
 
         function getData(lat, lon, name) {
-            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min&hourly=temperature_2m,precipitation,precipitation_probability&past_days=2&forecast_days=4&timezone=auto`;
+            const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min&hourly=temperature_2m,precipitation,precipitation_probability&past_days=2&forecast_days=6&timezone=auto`;
 
             const cacheKey = `${lat},${lon}`;
             const cached = getWithExpiry(cacheKey);
@@ -242,12 +266,12 @@ add_shortcode('alberta_weather_map', function () {
             fetch(api)
                 .then(res => res.json())
                 .then(data => {
-                setWithExpiry(cacheKey, data, 3600);
-                showWeather(data, name);
-            })
-            .catch(err => {
-                weatherOutput.innerHTML = `<p style="color:red;">Could not load weather forecast. Please try again later.</p>`;
-            });
+                    setWithExpiry(cacheKey, data, 3600);
+                    showWeather(data, name);
+                })
+                .catch(err => {
+                    weatherOutput.innerHTML = `<p style="color:red;">Could not load weather forecast. Please try again later.</p>`;
+                });
         }
 
         function showWeather(data, name) {
@@ -270,14 +294,14 @@ add_shortcode('alberta_weather_map', function () {
                     <p><strong>Low:</strong> ${data.daily.temperature_2m_min[index]} °C</p>
                     <p><strong>Rain:</strong> ${data.daily.precipitation_sum[index]} mm</p>
                 `;
-            div.addEventListener('click', () => showHourlyChart(day, data));
+                div.addEventListener('click', () => showHourlyChart(day, data));
                 weatherSummaries.appendChild(div);
             });
             showHourlyChart(days[todayIndex], data);
         }
-           
+
         function showHourlyChart(dayStr, data) {
-        const labels = [], temps = [], precips = [], precipChance = [];
+            const labels = [], temps = [], precips = [], precipChance = [];
             data.hourly.time.forEach((t, i) => {
                 if (t.startsWith(dayStr)) {
                     labels.push(formatAMPM(t));
@@ -318,48 +342,39 @@ add_shortcode('alberta_weather_map', function () {
                             label: 'Precipitation Probability (%)',
                             data: precipChance,
                             backgroundColor: 'rgba(54, 163, 235, 0.2)',
-                            pointRadius: 2,
                             yAxisID: 'y2',
                             barPercentage: 0.2
                         }
                     ]
                 },
                 options: {
-                responsive: true,
-                    interaction: {
-                        intersect: false,
-                        mode: 'index',
-                    },
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: window.innerWidth < 768 ? 0.5 : 2.5,
+                    interaction: { intersect: false, mode: 'index' },
                     plugins: {
                         title: {
                             display: true,
                         text: `Hourly Forecast for ${dayStr}`,
-                        font: { size: 18 }
+                        font: { size: 16 }
                         }
                     },
                     scales: {
-                        x: {
-                            stacked: true
-                        },
+                        x: { stacked: true },
                         y0: {
                             min: 0,
                             max: 30,
                             position: 'left',
-                        title: { display: true, text: 'Temperature (°C)' }
+                            title: { display: true, text: 'Temperature (°C)' }
                         },
                         y1: {
                             min: 0,
                             max: 15,
                             position: 'right',
-                        title: { display: true, text: 'Precipitation (mm)' },
-                        grid: { drawOnChartArea: false }
+                            title: { display: true, text: 'Precipitation (mm)' },
+                            grid: { drawOnChartArea: false }
                         },
-                        y2: {
-                            min: 0,
-                            max: 100,
-                            display: false,
-                        title: { display: false }
-                        },
+                        y2: { min: 0, max: 100, display: false }
                     }
                 }
             });
@@ -375,28 +390,27 @@ add_shortcode('alberta_weather_map', function () {
             return `${hours}:${minutes} ${ampm}`;
         }
 
-        const scale = wrapper.offsetWidth / viewWidth;
+        // Position markers initially and on resize
+        positionMarkers();
+        window.addEventListener('resize', positionMarkers);
+
+        // Attach marker click events
         Object.entries(locations).forEach(([id, loc]) => {
-            const pos = project(loc.lat, loc.lon);
-            const container = document.getElementById(`${id}-marker-container`);
             const marker = document.getElementById(`${id}-marker`);
-            container.style.left = `${pos.x * scale}px`;
-            container.style.top = `${pos.y * scale}px`;
             marker.addEventListener('click', () => getData(loc.lat, loc.lon, loc.name));
             if (location.hash === `#${id}`) {
                 getData(loc.lat, loc.lon, loc.name);
-                container.scrollIntoView();
             }
         });
+
         window.addEventListener('hashchange', () => {
             Object.entries(locations).forEach(([id, loc]) => {
                 if (location.hash === `#${id}`) {
                     getData(loc.lat, loc.lon, loc.name);
                 }
-            })
+            });
         });
     });
-
     </script>
     <?php
     return ob_get_clean();
