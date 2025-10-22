@@ -2,12 +2,13 @@
 /**
  * Plugin Name: WABA Weather Forecast
  * Description: Shows clickable markers on an SVG map of Alberta and fetches weather data on click.
- * Version: 1.6.0
+ * Version: 1.7.0
  * Author: Brian Henderson
  */
 
 add_action('wp_enqueue_scripts', function () {
     wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', [], null, true);
+    wp_enqueue_script('Math');
 });
 
 add_shortcode('alberta_weather_map', function () {
@@ -302,6 +303,8 @@ add_shortcode('alberta_weather_map', function () {
 
         function showHourlyChart(dayStr, data) {
             const labels = [], temps = [], precips = [], precipChance = [];
+            let graphTempMinDefault = 0;
+            let graphTempMaxDefault = 30;
             data.hourly.time.forEach((t, i) => {
                 if (t.startsWith(dayStr)) {
                     labels.push(formatAMPM(t));
@@ -310,6 +313,16 @@ add_shortcode('alberta_weather_map', function () {
                     precipChance.push(data.hourly.precipitation_probability[i]);
                 }
             });
+
+            // Adjust graph boundaries for freezing temps.
+            let minTemp = Math.round(Math.min(...temps));
+            if (minTemp % 2 !== 0) {
+                minTemp -= 1;
+            }
+            if(minTemp < 5) {
+                graphTempMinDefault = Math.round(minTemp) - 2;
+                graphTempMaxDefault = graphTempMaxDefault + minTemp - 2;
+            };
 
             if (chart) chart.destroy();
             chart = new Chart(chartCanvas, {
@@ -362,8 +375,8 @@ add_shortcode('alberta_weather_map', function () {
                     scales: {
                         x: { stacked: true },
                         y0: {
-                            min: 0,
-                            max: 30,
+                            min: graphTempMinDefault,
+                            max: graphTempMaxDefault,
                             position: 'left',
                             title: { display: true, text: 'Temperature (°C)' }
                         },
