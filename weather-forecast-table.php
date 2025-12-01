@@ -42,8 +42,8 @@ add_shortcode('alberta_weather_map', function () {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: clamp(10px, 2vw, 80px);
-            height: clamp(10px, 2vw, 80px);
+            width: clamp(10px, 2vw, 40px);
+            height: clamp(10px, 2vw, 40px);
             border: 2px solid green;
             background-color: rgba(0, 128, 0, 0.4);
             transform: translate(-50%, -50%);
@@ -54,7 +54,7 @@ add_shortcode('alberta_weather_map', function () {
             white-space: nowrap;
             font-weight: 500;
             color: #000;
-            font-size: clamp(6px, 1.2vw, 12px);
+            font-size: clamp(10px, 1.2vw, 12px);
             pointer-events: none;
             top: 50%;
             transform: translateX(-50%);
@@ -128,7 +128,14 @@ add_shortcode('alberta_weather_map', function () {
             color: #999;
         }
 
+        #calgary-marker-container .marker-label {
+            display: none;
+        }
+
         @media (max-width: 768px) {
+            #calgary-marker-container .marker-label {
+                display: block;
+            }
             .alberta-map-wrapper {
                 max-width: 100%;
             }
@@ -297,9 +304,6 @@ add_shortcode('alberta_weather_map', function () {
                     container.style.top = `${pos.y}px`;
 
                     const label = container.querySelector('.marker-label');
-                    if (label) {
-                        label.style.display = id === 'calgary' ? 'none' : 'block';
-                    }
                 });
             }
 
