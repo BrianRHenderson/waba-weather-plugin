@@ -3,7 +3,7 @@
 /**
  * Plugin Name: WABA Weather Forecast (PNG Map)
  * Description: Shows clickable markers on a PNG map of Alberta and fetches weather data on click.
- * Version: 1.8.0
+ * Version: 1.8.1
  * Author: Brian Henderson
  */
 
@@ -42,8 +42,8 @@ add_shortcode('alberta_weather_map', function () {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: clamp(10px, 2vw, 40px);
-            height: clamp(10px, 2vw, 40px);
+            width: clamp(10px, 2vw, 30px);
+            height: clamp(10px, 2vw, 30px);
             border: 2px solid green;
             background-color: rgba(0, 128, 0, 0.4);
             transform: translate(-50%, -50%);
@@ -52,11 +52,11 @@ add_shortcode('alberta_weather_map', function () {
         .marker-label {
             position: absolute;
             white-space: nowrap;
-            font-weight: 500;
+            font-weight: 700;
             color: #000;
             font-size: clamp(10px, 1.2vw, 12px);
             pointer-events: none;
-            top: 50%;
+            top: 40%;
             transform: translateX(-50%);
         }
 
@@ -195,6 +195,10 @@ add_shortcode('alberta_weather_map', function () {
             <div id="skyline-marker" class="alberta-marker" tabindex="5" aria-label="Skyline weather marker" title="Click for weather"></div>
             <div class="marker-label">Skyline</div>
         </div>
+        <div id="whiteBhudda-marker-container" class="marker-container">
+            <div id="whiteBhudda-marker" class="alberta-marker" tabindex="5" aria-label="White Bhudda weather marker" title="Click for weather"></div>
+            <div class="marker-label">White Bhudda</div>
+        </div>
     </div>
 
     <div id="weather-output">
@@ -238,6 +242,11 @@ add_shortcode('alberta_weather_map', function () {
                     lat: 49.5963,
                     lon: -114.3966,
                     name: "Frank"
+                },
+                whiteBhudda: {
+                    lat: 50.8672,
+                    lon: -114.8064,
+                    name: "White Bhudda"
                 },
             };
 
