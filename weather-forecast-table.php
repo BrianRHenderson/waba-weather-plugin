@@ -195,9 +195,9 @@ add_shortcode('alberta_weather_map', function () {
             <div id="skyline-marker" class="alberta-marker" tabindex="5" aria-label="Skyline weather marker" title="Click for weather"></div>
             <div class="marker-label">Skyline</div>
         </div>
-        <div id="whiteBhudda-marker-container" class="marker-container">
-            <div id="whiteBhudda-marker" class="alberta-marker" tabindex="5" aria-label="White Bhudda weather marker" title="Click for weather"></div>
-            <div class="marker-label">White Bhudda</div>
+        <div id="whiteBuddha-marker-container" class="marker-container">
+            <div id="whiteBuddha-marker" class="alberta-marker" tabindex="5" aria-label="White Buddha weather marker" title="Click for weather"></div>
+            <div class="marker-label">White Buddha</div>
         </div>
     </div>
 
@@ -243,10 +243,10 @@ add_shortcode('alberta_weather_map', function () {
                     lon: -114.3966,
                     name: "Frank"
                 },
-                whiteBhudda: {
+                whiteBuddha: {
                     lat: 50.8672,
                     lon: -114.8064,
-                    name: "White Bhudda"
+                    name: "White Buddha"
                 },
             };
 
